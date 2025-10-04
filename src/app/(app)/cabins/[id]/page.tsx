@@ -1,7 +1,13 @@
-export default function Cabin() {
-  return (
-    <div className='flex flex-col items-center justify-center min-h-screen gap-6'>
-      <h1 className='text-4xl font-semibold'>Cabaña #1</h1>
-    </div>
-  );
+import { CabinDetails } from '@/components/features/cabins/cabin-details';
+import { getCabinById } from '@/services/cabins';
+
+export default async function Cabin({ params }: { params: { id: string } }) {
+  const { id } = await params;
+  const cabin = await getCabinById(id);
+
+  if (!cabin) {
+    return <div>Cabaña no encontrada.</div>;
+  }
+
+  return <CabinDetails cabin={cabin} />;
 }

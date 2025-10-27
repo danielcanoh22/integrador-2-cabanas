@@ -1,4 +1,4 @@
-import { AvailabilityMap, AvailabilityRecord } from '@/types/availability';
+import { AvailabilityMap } from '@/types/availability';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -14,7 +14,7 @@ export async function getMonthlyAvailability(
   cabinId: number,
   year: number,
   month: number
-): Promise<AvailabilityMap[]> {
+): Promise<AvailabilityMap> {
   const endpoint = `${API_URL}/availability/cabin/${cabinId}/calendar?year=${year}&month=${month}`;
 
   try {
@@ -26,12 +26,12 @@ export async function getMonthlyAvailability(
       throw new Error('Error al obtener las fechas disponibles.');
     }
 
-    const availabilityData: AvailabilityMap[] = await res.json();
+    const availabilityData: AvailabilityMap = await res.json();
 
     console.log(availabilityData);
 
     return availabilityData;
   } catch (error) {
-    throw new Error('Error al obtener las fechas disponibles.');
+    return {};
   }
 }

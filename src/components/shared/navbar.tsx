@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '../ui/button';
 import {
@@ -10,9 +11,9 @@ import {
   Menu,
   Settings,
 } from 'lucide-react';
-import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
+import Cookies from 'js-cookie';
 import {
   Sheet,
   SheetContent,
@@ -55,7 +56,7 @@ export const Navbar = () => {
   ];
 
   const handleLogout = () => {
-    // TODO: Implementar lógica de cierre de sesión
+    Cookies.remove('accessToken');
     router.push('/login');
   };
 
@@ -97,9 +98,9 @@ export const Navbar = () => {
           </nav>
 
           <div className='hidden md:flex items-center space-x-4'>
-            <span className='text-sm text-muted-foreground'>
+            {/* <span className='text-sm text-muted-foreground'>
               Hola, {user.name}
-            </span>
+            </span> */}
             <ThemeButton />
             <Button
               variant='ghost'
@@ -159,9 +160,9 @@ export const Navbar = () => {
                   <div className='mt-auto'>
                     <hr className='my-4' />
                     <div className='flex items-center space-x-3 p-3 justify-self-end'>
-                      <span className='text-lg text-muted-foreground'>
+                      {/* <span className='text-lg text-muted-foreground'>
                         Hola, {user.name}
-                      </span>
+                      </span> */}
                       <Button
                         variant='ghost'
                         size='icon'

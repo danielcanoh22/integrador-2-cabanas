@@ -1,9 +1,5 @@
 export interface Amenities {
-  wifi?: boolean;
-  parking?: boolean;
-  kitchen?: boolean;
-  lake_view?: boolean;
-  terrace?: boolean;
+  amenities: string[];
 }
 
 export interface Location {
@@ -12,6 +8,7 @@ export interface Location {
     lat: number;
     lng: number;
   };
+  zone: string;
 }
 
 export interface Cabin {
@@ -22,15 +19,31 @@ export interface Cabin {
   bedrooms: number;
   bathrooms: number;
   basePrice: number;
-  maxGusts: number;
+  maxGuests: number;
   active: boolean;
   amenities: Amenities;
   location: Location;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface RawCabin extends Omit<Cabin, 'amenities' | 'location'> {
   amenities: string;
   location: string;
 }
+
+export type CabinFormData = {
+  name: string;
+  description: string;
+  capacity: string;
+  bedrooms: string;
+  bathrooms: string;
+  basePrice: string;
+  maxGuests: string;
+  active: boolean;
+  locationAddress: string;
+  locationZone: string;
+  locationLat: string;
+  locationLng: string;
+  amenities: string;
+};

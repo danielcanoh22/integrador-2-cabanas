@@ -1,3 +1,14 @@
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -13,22 +24,36 @@ import { Cabin } from '@/types/cabin';
 import { format, startOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Users } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Calendar from 'react-calendar';
+import { Value } from 'react-calendar/dist/shared/types.js';
+import toast from 'react-hot-toast';
 
 type CabinDetailCalendarProps = {
   cabin: Cabin;
 };
 
+const MOCK_DATES: Record<string, boolean> = {
+  '2025-10-10': false,
+  '2025-10-11': false,
+  '2025-10-12': false,
+  '2025-10-30': false,
+  '2025-10-31': false,
+};
+
 // TODO: Solucionar errores de tipado cuando se arregle
 // el endpoint de availability
 export const CabinDetailSidebar = ({ cabin }: CabinDetailCalendarProps) => {
-  const [availabilityMap, setAvailabilityMap] = useState<AvailabilityMap[]>([]);
+  const [availabilityMap, setAvailabilityMap] = useState<AvailabilityMap>({});
   const [checkIn, setCheckIn] = useState<Date>();
   const [checkOut, setCheckOut] = useState<Date>();
   const [isReserving, setIsReserving] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
   const [isSelectingCheckOut, setIsSelectingCheckOut] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const router = useRouter();
 
   useEffect(() => {
     const fetchAvailability = async () => {
@@ -51,46 +76,64 @@ export const CabinDetailSidebar = ({ cabin }: CabinDetailCalendarProps) => {
     }
   };
 
-  const handleDateChange = (date: Date) => {
-    const dateString = format(date, 'yyyy-MM-dd');
-    if (availabilityMap[dateString] === false) {
-      return;
-    }
+  const handleDateChange = (value: Value) => {
+    if (value instanceof Date) {
+      const date = value;
 
-    if (!isSelectingCheckOut) {
-      setCheckIn(date);
-      setCheckOut(undefined);
-      setIsSelectingCheckOut(true);
-      return;
-    }
-
-    if (isSelectingCheckOut) {
-      if (checkIn && date <= checkIn) {
-        setCheckIn(date);
-        setCheckOut(undefined);
+      const dateString = format(date, 'yyyy-MM-dd');
+      if (availabilityMap[dateString] === false) {
         return;
       }
 
-      const start = new Date(checkIn!);
-      start.setDate(start.getDate() + 1);
-
-      while (start < date) {
-        const loopDateString = format(start, 'yyyy-MM-dd');
-        if (availabilityMap[loopDateString] === false) {
-          setCheckIn(undefined);
-          setCheckOut(undefined);
-          setIsSelectingCheckOut(false);
-          return;
-        }
-        start.setDate(start.getDate() + 1);
+      if (!isSelectingCheckOut) {
+        setCheckIn(date);
+        setCheckOut(undefined);
+        setIsSelectingCheckOut(true);
+        return;
       }
 
-      setCheckOut(date);
-      setIsSelectingCheckOut(false);
+      if (isSelectingCheckOut) {
+        if (checkIn && date <= checkIn) {
+          setCheckIn(date);
+          setCheckOut(undefined);
+          return;
+        }
+
+        const start = new Date(checkIn!);
+        start.setDate(start.getDate() + 1);
+
+        while (start < date) {
+          const loopDateString = format(start, 'yyyy-MM-dd');
+          if (availabilityMap[loopDateString] === false) {
+            setCheckIn(undefined);
+            setCheckOut(undefined);
+            setIsSelectingCheckOut(false);
+            return;
+          }
+          start.setDate(start.getDate() + 1);
+        }
+
+        setCheckOut(date);
+        setIsSelectingCheckOut(false);
+      }
     }
   };
 
-  const handleReservation = () => {};
+  const handleReservation = () => {
+    setIsReserving(true); // Activa el estado de carga
+
+    // Simula la llamada a la API
+    setTimeout(() => {
+      toast.success('Reserva realizada con éxito', {
+        duration: 3000,
+        position: 'bottom-right',
+      });
+
+      setIsReserving(false); // Desactiva el estado de carga
+      setIsModalOpen(false); // Cierra el modal
+      router.push('/reservations'); // Redirige al usuario
+    }, 2000);
+  };
 
   const tileClassName = ({ date, view }: { date: Date; view: string }) => {
     if (view !== 'month') return null;
@@ -104,6 +147,7 @@ export const CabinDetailSidebar = ({ cabin }: CabinDetailCalendarProps) => {
     }
 
     const dateString = format(date, 'yyyy-MM-dd');
+    // if (availabilityMap[dateString] === false) {
     if (availabilityMap[dateString] === false) {
       return `${baseClass} calendar-tile-occupied`;
     }
@@ -138,6 +182,7 @@ export const CabinDetailSidebar = ({ cabin }: CabinDetailCalendarProps) => {
     if (date < today) return true;
 
     const dateString = format(date, 'yyyy-MM-dd');
+    // return availabilityMap[dateString] === false;
     return availabilityMap[dateString] === false;
   };
 
@@ -249,14 +294,71 @@ export const CabinDetailSidebar = ({ cabin }: CabinDetailCalendarProps) => {
             </div>
           </div>
         )}
-
+        {/* 
         <Button
           onClick={handleReservation}
           disabled={!checkIn || !checkOut || isReserving}
           className='w-full bg-primary-green hover:bg-primary-green/90 cursor-pointer text-white shadow-lg transition-all duration-150 transform hover:scale-[1.01]'
         >
           {isReserving ? 'Procesando...' : 'Reservar Ahora'}
-        </Button>
+        </Button> */}
+
+        <AlertDialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <AlertDialogTrigger asChild>
+            <Button
+              disabled={!checkIn || !checkOut || isReserving}
+              className='w-full bg-primary-green hover:bg-primary-green/90 cursor-pointer text-white shadow-lg transition-all duration-150 transform hover:scale-[1.01]'
+            >
+              {isReserving ? 'Procesando...' : 'Reservar Ahora'}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Confirmar tu reserva?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {/* Mostramos un resumen de la reserva para confirmar */}
+                <div className='space-y-2 mt-4 text-sm'>
+                  <div className='flex justify-between'>
+                    <span className='text-muted-foreground'>Cabaña:</span>
+                    <span className='font-semibold'>{cabin.name}</span>
+                  </div>
+                  <div className='flex justify-between'>
+                    <span className='text-muted-foreground'>Entrada:</span>
+                    <span className='font-semibold'>
+                      {checkIn && format(checkIn, 'PPP', { locale: es })}
+                    </span>
+                  </div>
+                  <div className='flex justify-between'>
+                    <span className='text-muted-foreground'>Salida:</span>
+                    <span className='font-semibold'>
+                      {checkOut && format(checkOut, 'PPP', { locale: es })}
+                    </span>
+                  </div>
+                  <div className='flex justify-between border-t pt-2 mt-2'>
+                    <span className='text-muted-foreground'>
+                      Total a pagar:
+                    </span>
+                    <span className='font-bold text-lg'>
+                      {formatPrice(calculateTotal())}
+                    </span>
+                  </div>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className='cursor-pointer transition-all duration-150 transform hover:scale-[1.01]'>
+                Cancelar
+              </AlertDialogCancel>
+              {/* El botón de 'Continuar' ahora es el que llama a handleReservation */}
+              <AlertDialogAction
+                onClick={handleReservation}
+                className='bg-primary-green hover:bg-primary-green/90 cursor-pointer text-white shadow-lg transition-all duration-150 transform hover:scale-[1.01]'
+              >
+                Confirmar y Reservar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   );

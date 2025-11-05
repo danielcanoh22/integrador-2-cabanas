@@ -2,6 +2,16 @@
 
 import { CabinCard } from '@/components/features/admin/cabins/cabin-card';
 import { CabinForm } from '@/components/features/admin/cabins/cabin-form';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -11,131 +21,97 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Cabin, CabinFormData } from '@/types/cabin';
+import {
+  createCabin,
+  deleteCabin,
+  getAllAdminCabins,
+  updateCabin,
+} from '@/services/cabins-admin';
+import { Cabin, CabinFormData, CabinPayload } from '@/types/cabin';
 import { Plus } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
-const mockCabins: Cabin[] = [
-  {
-    id: 1,
-    name: 'Cabaña del Bosque',
-    description:
-      'Acogedora cabaña rodeada de naturaleza, perfecta para el descanso familiar.',
-    // image: '/assets/image/cabin-1.jpg',
-    basePrice: 150000,
-    capacity: 6,
-    location: {
-      address: 'Calle 0 #0-0',
-      coordinates: {
-        lat: -5,
-        lng: 5,
-      },
-      zone: 'Guatapé, Antioquia',
-    },
-    amenities: {
-      amenities: ['WiFi', 'Cocina', 'Chimenea', 'Parqueadero'],
-    },
-    active: true,
-    bathrooms: 2,
-    bedrooms: 4,
-    maxGuests: 10,
-  },
-
-  {
-    id: 2,
-    name: 'Cabaña del Bosque',
-    description:
-      'Acogedora cabaña rodeada de naturaleza, perfecta para el descanso familiar.',
-    // image: '/assets/image/cabin-1.jpg',
-    basePrice: 150000,
-    capacity: 6,
-    location: {
-      address: 'Calle 0 #0-0',
-      coordinates: {
-        lat: -5,
-        lng: 5,
-      },
-      zone: 'Guatapé, Antioquia',
-    },
-    amenities: {
-      amenities: ['WiFi', 'Cocina', 'Chimenea', 'Parqueadero'],
-    },
-    active: true,
-    bathrooms: 2,
-    bedrooms: 4,
-    maxGuests: 10,
-  },
-  {
-    id: 3,
-    name: 'Cabaña del Bosque',
-    description:
-      'Acogedora cabaña rodeada de naturaleza, perfecta para el descanso familiar.',
-    // image: '/assets/image/cabin-1.jpg',
-    basePrice: 150000,
-    capacity: 6,
-    location: {
-      address: 'Calle 0 #0-0',
-      coordinates: {
-        lat: -5,
-        lng: 5,
-      },
-      zone: 'Guatapé, Antioquia',
-    },
-    amenities: {
-      amenities: ['WiFi', 'Cocina', 'Chimenea', 'Parqueadero'],
-    },
-    active: true,
-    bathrooms: 2,
-    bedrooms: 4,
-    maxGuests: 10,
-  },
-];
-
 export default function CabinsManagement() {
-  const [cabins, setCabins] = useState<Cabin[]>(mockCabins);
+  const [cabins, setCabins] = useState<Cabin[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCabin, setEditingCabin] = useState<Cabin | null>(null);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [cabinToDelete, setCabinToDelete] = useState<number | null>(null);
 
-  const handleSubmit = (formData: CabinFormData) => {
-    const processedDataForCabin = {
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadCabins = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const data = await getAllAdminCabins();
+        setCabins(data);
+      } catch (err) {
+        setError((err as Error).message);
+        toast.error('No se pudieron cargar las cabañas.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadCabins();
+  }, []);
+
+  const handleSubmit = async (formData: CabinFormData) => {
+    const payload: CabinPayload = {
       name: formData.name,
       description: formData.description,
-      active: formData.active,
-      capacity: parseInt(formData.capacity, 10),
+      capacity: parseInt(formData.maxGuests, 10),
       bedrooms: parseInt(formData.bedrooms, 10),
       bathrooms: parseInt(formData.bathrooms, 10),
       basePrice: parseInt(formData.basePrice, 10),
       maxGuests: parseInt(formData.maxGuests, 10),
-      amenities: {
-        amenities: formData.amenities.split(',').map((a) => a.trim()),
-      },
-      location: {
+      amenities: JSON.stringify(
+        formData.amenities.split(',').map((a) => a.trim())
+      ),
+      location: JSON.stringify({
         address: formData.locationAddress,
-        zone: formData.locationZone,
         coordinates: {
-          lat: parseFloat(formData.locationLat),
-          lng: parseFloat(formData.locationLng),
+          lat: 0,
+          lng: 0,
         },
-      },
+        zone: '',
+      }),
+      defaultCheckInTime: formData.defaultCheckInTime || '15:00',
+      defaultCheckOutTime: formData.defaultCheckOutTime || '11:00',
     };
 
+    console.log(payload);
+
     if (editingCabin) {
-      const updatedCabin: Cabin = {
-        ...editingCabin,
-        ...processedDataForCabin,
-      };
+      const updatedCabin = await updateCabin(editingCabin.id, payload);
+
       setCabins(
-        cabins.map((c) => (c.id === updatedCabin.id ? updatedCabin : c))
+        cabins.map((c) =>
+          c.id === updatedCabin.id
+            ? {
+                ...updatedCabin,
+                amenities: updatedCabin.amenities,
+                location: updatedCabin.location,
+              }
+            : c
+        )
       );
-      toast.success('Cabaña actualizada');
+      toast.success('Cabaña actualizada con éxito');
     } else {
-      const newCabin: Cabin = {
-        id: Math.random(),
-        ...processedDataForCabin,
-      };
-      setCabins((prev) => [...prev, newCabin]);
-      toast.success('Cabaña creada');
+      const newCabin = await createCabin(payload);
+      setCabins((prev) => [
+        ...prev,
+        {
+          ...newCabin,
+          amenities: newCabin.amenities,
+          location: newCabin.location,
+        },
+      ]);
+      toast.success('Cabaña creada con éxito');
     }
 
     closeDialog();
@@ -146,9 +122,23 @@ export default function CabinsManagement() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: number) => {
-    setCabins(cabins.filter((cabin) => cabin.id !== id));
-    toast.success('La cabaña ha sido eliminada');
+  const handleConfirmDelete = async () => {
+    if (!cabinToDelete) return;
+
+    try {
+      await deleteCabin(cabinToDelete);
+
+      setCabins((prevCabins) =>
+        prevCabins.filter((cabin) => cabin.id !== cabinToDelete)
+      );
+
+      toast.success('La cabaña ha sido eliminada');
+    } catch (error) {
+      toast.error((error as Error).message || 'No se pudo eliminar la cabaña.');
+    } finally {
+      setIsAlertOpen(false);
+      setCabinToDelete(null);
+    }
   };
 
   const toggleAvailability = (id: number) => {
@@ -163,6 +153,11 @@ export default function CabinsManagement() {
   const openNewCabinDialog = () => {
     setEditingCabin(null);
     setIsDialogOpen(true);
+  };
+
+  const openDeleteDialog = (id: number) => {
+    setCabinToDelete(id);
+    setIsAlertOpen(true);
   };
 
   const closeDialog = () => {
@@ -211,17 +206,51 @@ export default function CabinsManagement() {
         </Dialog>
       </div>
 
-      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-        {cabins.map((cabin) => (
-          <CabinCard
-            key={cabin.id}
-            cabin={cabin}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onToggleAvailability={toggleAvailability}
-          />
-        ))}
-      </div>
+      {isLoading ? (
+        <div className='text-center py-12'>Cargando cabañas...</div>
+      ) : error ? (
+        <div className='text-center py-12 text-red-600'>
+          <p>Error al cargar los datos</p>
+        </div>
+      ) : (
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+          {cabins.map((cabin) => (
+            <CabinCard
+              key={cabin.id}
+              cabin={cabin}
+              onEdit={handleEdit}
+              onDelete={openDeleteDialog}
+              onToggleAvailability={toggleAvailability}
+            />
+          ))}
+        </div>
+      )}
+
+      <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Esto eliminará permanentemente
+              la cabaña de la base de datos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => setCabinToDelete(null)}
+              className='cursor-pointer'
+            >
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className='bg-destructive hover:bg-destructive/90 text-white cursor-pointer'
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { login } from '@/services/auth';
+import Link from 'next/link';
 
 export default function Login() {
   const router = useRouter();
@@ -25,6 +26,7 @@ export default function Login() {
       const data = await login({ documentNumber, password });
 
       Cookies.set('accessToken', data.accessToken, { expires: 7 });
+      Cookies.set('refreshToken', data.refreshToken, { expires: 30 });
 
       toast.success('¡Bienvenido de vuelta!');
       router.push('/cabins');
@@ -63,8 +65,17 @@ export default function Login() {
                 />
               </div>
               <div className='grid gap-3'>
-                <div className='flex items-center'>
+                <div className='flex items-center justify-between'>
                   <Label htmlFor='password'>Contraseña</Label>
+
+                  <div className='text-center text-sm'>
+                    <a
+                      href='#'
+                      className='ml-auto inline-block text-sm text-gray-700 dark:text-gray-300 underline-offset-4 hover:underline'
+                    >
+                      ¿Olvidaste tu contraseña?
+                    </a>
+                  </div>
                 </div>
                 <Input
                   id='password'
@@ -85,14 +96,16 @@ export default function Login() {
                   {isLoading ? 'Ingresando...' : 'Iniciar Sesión'}
                 </Button>
               </div>
-            </div>
-            <div className='mt-4 text-center text-sm'>
-              <a
-                href='#'
-                className='ml-auto inline-block text-sm underline-offset-4 hover:underline'
-              >
-                ¿Olvidaste tu contraseña?
-              </a>
+
+              <p className='text-center text-sm text-gray-700 dark:text-gray-300'>
+                ¿No tienes una cuenta?{' '}
+                <Link
+                  href='/register'
+                  className='underline underline-offset-6 hover:text-primary-green dark:hover:text-white'
+                >
+                  Regístrate
+                </Link>
+              </p>
             </div>
           </form>
         </CardContent>

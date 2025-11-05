@@ -67,14 +67,14 @@ export const CabinCard = ({
           </div>
         </div>
         <div className='flex flex-wrap gap-1 mb-3'>
-          {cabin.amenities.amenities.slice(0, 3).map((amenity, index) => (
+          {(cabin.amenities as string[]).slice(0, 3).map((amenity, index) => (
             <Badge key={index} variant='outline' className='text-xs'>
               {amenity}
             </Badge>
           ))}
-          {cabin.amenities.amenities.length > 3 && (
+          {cabin.amenities.length > 3 && (
             <Badge variant='outline' className='text-xs'>
-              +{cabin.amenities.amenities.length - 3} más
+              +{cabin.amenities.length - 3} más
             </Badge>
           )}
         </div>

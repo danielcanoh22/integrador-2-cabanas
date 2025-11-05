@@ -93,17 +93,18 @@ export const CabinDetails = ({ cabin }: CabinDetailsProps) => {
                     </span>
                   </div>
                 ))} */}
-                {cabin.amenities.amenities.map((feature, index) => (
-                  <div
-                    key={index}
-                    className='group flex items-start space-x-4 p-4 rounded-xl hover:bg-gradient-to-r hover:from-primary-purple/10 hover:to-transparent transition-all duration-300'
-                  >
-                    <div className='w-3 h-3 rounded-full bg-gradient-to-r from-primary-purple/80 to-primary-pink/80 mt-2 flex-shrink-0 shadow-sm group-hover:scale-125 transition-transform duration-200'></div>
-                    <span className='text-gray-500 dark:text-gray-300 text-lg leading-relaxed group-hover:text-primary-purple transition-colors duration-300'>
-                      {feature}
-                    </span>
-                  </div>
-                ))}
+                {Array.isArray(cabin.amenities) &&
+                  cabin.amenities.map((feature, index) => (
+                    <div
+                      key={index}
+                      className='group flex items-start space-x-4 p-4 rounded-xl hover:bg-gradient-to-r hover:from-primary-purple/10 hover:to-transparent transition-all duration-300'
+                    >
+                      <div className='w-3 h-3 rounded-full bg-gradient-to-r from-primary-purple/80 to-primary-pink/80 mt-2 flex-shrink-0 shadow-sm group-hover:scale-125 transition-transform duration-200'></div>
+                      <span className='text-gray-500 dark:text-gray-300 text-lg leading-relaxed group-hover:text-primary-purple transition-colors duration-300'>
+                        {feature}
+                      </span>
+                    </div>
+                  ))}
               </div>
             </CardContent>
           </Card>

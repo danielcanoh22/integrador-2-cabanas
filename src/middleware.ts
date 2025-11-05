@@ -5,20 +5,20 @@ export function middleware(request: NextRequest) {
   const authToken = request.cookies.get('accessToken')?.value;
 
   const { pathname } = request.nextUrl;
+  const publicPaths = ['/login', '/register'];
+
+  const isPublicPath = publicPaths.some((path) => pathname.startsWith(path));
 
   if (pathname === '/') {
-    if (authToken) {
-      return NextResponse.redirect(new URL('/cabins', request.url));
-    }
-
-    return NextResponse.redirect(new URL('/login', request.url));
+    const url = authToken ? '/cabins' : '/login';
+    return NextResponse.redirect(new URL(url, request.url));
   }
 
-  if (authToken && pathname.startsWith('/login')) {
+  if (authToken && isPublicPath) {
     return NextResponse.redirect(new URL('/cabins', request.url));
   }
 
-  if (!authToken && !pathname.startsWith('/login')) {
+  if (!authToken && !isPublicPath) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 

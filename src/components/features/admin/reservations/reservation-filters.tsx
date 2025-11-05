@@ -37,10 +37,10 @@ export const ReservationFilters = ({
         <SelectValue placeholder='Filtrar por estado' />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value='all'>Todos los estados</SelectItem>
-        <SelectItem value='confirmed'>Confirmadas</SelectItem>
-        <SelectItem value='pending'>Pendientes</SelectItem>
-        <SelectItem value='cancelled'>Canceladas</SelectItem>
+        <SelectItem value='ALL'>Todos los estados</SelectItem>
+        <SelectItem value='CONFIRMED'>Confirmadas</SelectItem>
+        <SelectItem value='PENDING'>Pendientes</SelectItem>
+        <SelectItem value='CANCELLED'>Canceladas</SelectItem>
       </SelectContent>
     </Select>
   </div>

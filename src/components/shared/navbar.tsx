@@ -10,6 +10,7 @@ import {
   LogOut,
   Menu,
   Settings,
+  UserRoundCheck,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -51,12 +52,18 @@ export const Navbar = () => {
             href: '/admin/reservation-management',
             icon: Settings,
           },
+          {
+            name: 'Gestionar Documentos',
+            href: '/admin/documents-management',
+            icon: UserRoundCheck,
+          },
         ]
       : []),
   ];
 
   const handleLogout = () => {
     Cookies.remove('accessToken');
+    Cookies.remove('refreshToken');
     router.push('/login');
   };
 

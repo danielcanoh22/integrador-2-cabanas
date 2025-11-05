@@ -16,7 +16,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { formatPrice } from '@/lib/helpers';
-import { Reservation } from '@/types/reservation';
+import { EnrichedReservation } from '@/types/reservation';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Calendar, Mail, MapPin, Phone } from 'lucide-react';
@@ -39,7 +39,7 @@ const getStatusBadge = (status: string) => {
 };
 
 type ReservationsTableProps = {
-  reservations: Reservation[];
+  reservations: EnrichedReservation[];
   onStatusChange: (reservationId: number, newStatus: string) => void;
 };
 
@@ -81,62 +81,67 @@ export const ReservationsTable = ({
                 <TableCell className='font-medium'>#{reservation.id}</TableCell>
                 <TableCell>
                   <div>
-                    <div className='font-medium'>{reservation.cabinName}</div>
+                    <div className='font-medium'>{reservation.cabin.name}</div>
                     <div className='text-sm text-muted-foreground flex items-center'>
                       <MapPin className='h-3 w-3 mr-1' />
-                      {reservation.cabinLocation}
+                      {reservation.cabin.location.address}
                     </div>
                   </div>
                 </TableCell>
                 <TableCell className='font-medium'>
-                  {reservation.guestName}
+                  {reservation.user.fullName}
                 </TableCell>
                 <TableCell>
                   <div className='space-y-1'>
                     <div className='flex items-center text-sm text-muted-foreground'>
                       <Mail className='h-3 w-3 mr-1' />
-                      {reservation.guestEmail}
+                      {reservation.user.email}
                     </div>
-                    <div className='flex items-center text-sm text-muted-foreground'>
+                    {/* <div className='flex items-center text-sm text-muted-foreground'>
                       <Phone className='h-3 w-3 mr-1' />
-                      {reservation.guestPhone}
-                    </div>
+                      test
+                    </div> */}
                   </div>
                 </TableCell>
                 <TableCell>
                   <div className='text-sm'>
                     Entrada:{' '}
-                    {format(reservation.checkIn, 'dd MMM yyyy', { locale: es })}
+                    {format(reservation.startDate, 'dd MMM yyyy', {
+                      locale: es,
+                    })}
                   </div>
                   <div className='text-sm'>
                     Salida:{' '}
-                    {format(reservation.checkOut, 'dd MMM yyyy', {
+                    {format(reservation.endDate, 'dd MMM yyyy', {
                       locale: es,
                     })}
                   </div>
                 </TableCell>
                 <TableCell>
                   <div className='font-bold text-cooprudea-teal'>
-                    {formatPrice(reservation.total)}
+                    {formatPrice(reservation.total || 0)}
                   </div>
                 </TableCell>
                 <TableCell>{getStatusBadge(reservation.status)}</TableCell>
                 <TableCell className='text-right'>
-                  <Select
-                    value={reservation.status}
-                    onValueChange={(value) =>
-                      onStatusChange(reservation.id, value)
-                    }
-                  >
-                    <SelectTrigger className='w-[130px]'>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value='pending'>Pendiente</SelectItem>
-                      <SelectItem value='confirmed'>Confirmar</SelectItem>
-                      <SelectItem value='cancelled'>Cancelar</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  {(reservation.status === 'PENDING' ||
+                    reservation.status === 'CONFIRMED') && (
+                    <Select
+                      value={reservation.status}
+                      onValueChange={(value) =>
+                        onStatusChange(reservation.id, value)
+                      }
+                    >
+                      <SelectTrigger className='w-[130px]'>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value='PENDING'>Pendiente</SelectItem>
+                        <SelectItem value='CONFIRMED'>Confirmar</SelectItem>
+                        <SelectItem value='CANCELLED'>Cancelar</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
                 </TableCell>
               </TableRow>
             ))}

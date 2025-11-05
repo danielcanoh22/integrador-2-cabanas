@@ -19,12 +19,10 @@ const emptyForm: CabinFormData = {
   bathrooms: '',
   basePrice: '',
   maxGuests: '',
-  active: true,
   locationAddress: '',
-  locationZone: '',
-  locationLat: '',
-  locationLng: '',
   amenities: '',
+  defaultCheckInTime: '15:00',
+  defaultCheckOutTime: '11:00',
 };
 
 export const CabinForm = ({
@@ -39,17 +37,15 @@ export const CabinForm = ({
       setFormData({
         name: initialData.name,
         description: initialData.description,
-        active: initialData.active,
-        capacity: initialData.capacity.toString(),
+        capacity: initialData.maxGuests.toString(),
+        maxGuests: initialData.maxGuests.toString(),
         bedrooms: initialData.bedrooms.toString(),
         bathrooms: initialData.bathrooms.toString(),
         basePrice: initialData.basePrice.toString(),
-        maxGuests: initialData.maxGuests.toString(),
-        amenities: initialData.amenities.amenities.join(', '),
-        locationAddress: initialData.location.address,
-        locationZone: initialData.location.zone,
-        locationLat: initialData.location.coordinates.lat.toString(),
-        locationLng: initialData.location.coordinates.lng.toString(),
+        amenities: initialData.amenities.join(', '),
+        locationAddress: initialData.location.address || '',
+        defaultCheckInTime: initialData.defaultCheckInTime || '15:00',
+        defaultCheckOutTime: initialData.defaultCheckOutTime || '11:00',
       });
     } else {
       setFormData(emptyForm);
@@ -59,12 +55,8 @@ export const CabinForm = ({
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    const { id, value, type } = e.target;
-    const isCheckbox = type === 'checkbox';
-    setFormData((prev) => ({
-      ...prev,
-      [id]: isCheckbox ? (e.target as HTMLInputElement).checked : value,
-    }));
+    const { id, value } = e.target;
+    setFormData((prev) => ({ ...prev, [id]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -73,7 +65,7 @@ export const CabinForm = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className='space-y-4'>
+    <form onSubmit={handleSubmit} className='space-y-6'>
       <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
         <div className='space-y-2'>
           <Label htmlFor='name'>Nombre</Label>
@@ -85,12 +77,13 @@ export const CabinForm = ({
           />
         </div>
         <div className='space-y-2'>
-          <Label htmlFor='location'>Ubicación</Label>
+          <Label htmlFor='locationAddress'>Dirección</Label>
           <Input
             id='locationAddress'
             value={formData.locationAddress}
             onChange={handleChange}
             required
+            placeholder='Ej: Vereda La Clarita, Finca #3'
           />
         </div>
       </div>
@@ -101,11 +94,43 @@ export const CabinForm = ({
           value={formData.description}
           onChange={handleChange}
           required
+          className='resize-none max-w-[462px]'
         />
       </div>
-      <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+
+      <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
         <div className='space-y-2'>
-          <Label htmlFor='price'>Precio por noche (COP)</Label>
+          <Label htmlFor='maxGuests'>Capacidad Max.</Label>
+          <Input
+            id='maxGuests'
+            type='number'
+            value={formData.maxGuests}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div className='space-y-2'>
+          <Label htmlFor='bedrooms'>Nº Dormitorios</Label>
+          <Input
+            id='bedrooms'
+            type='number'
+            value={formData.bedrooms}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div className='space-y-2'>
+          <Label htmlFor='bathrooms'>Nº Baños</Label>
+          <Input
+            id='bathrooms'
+            type='number'
+            value={formData.bathrooms}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div className='space-y-2'>
+          <Label htmlFor='basePrice'>Precio</Label>
           <Input
             id='basePrice'
             type='number'
@@ -114,45 +139,57 @@ export const CabinForm = ({
             required
           />
         </div>
+      </div>
+
+      <div className='space-y-2'>
+        <Label htmlFor='amenities'>Comodidades (separadas por coma)</Label>
+        <Textarea
+          id='amenities'
+          value={formData.amenities}
+          onChange={handleChange}
+          placeholder='WiFi, Cocina, Parqueadero...'
+          required
+          className='resize-none max-w-[462px]'
+        />
+      </div>
+
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
         <div className='space-y-2'>
-          <Label htmlFor='capacity'>Capacidad (personas)</Label>
+          <Label htmlFor='defaultCheckInTime'>Hora Check-In (HH:MM)</Label>
           <Input
-            id='capacity'
-            type='number'
-            value={formData.capacity}
+            id='defaultCheckInTime'
+            type='time'
+            value={formData.defaultCheckInTime}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div className='space-y-2'>
+          <Label htmlFor='defaultCheckOutTime'>Hora Check-Out (HH:MM)</Label>
+          <Input
+            id='defaultCheckOutTime'
+            type='time'
+            value={formData.defaultCheckOutTime}
             onChange={handleChange}
             required
           />
         </div>
       </div>
-      <div className='space-y-2'>
-        <Label htmlFor='amenities'>Comodidades (separadas por coma)</Label>
-        <Input
-          id='amenities'
-          value={formData.amenities}
-          onChange={handleChange}
-          placeholder='WiFi, Cocina, Chimenea'
-          required
-        />
-      </div>
-      <div className='flex items-center space-x-2'>
-        <input
-          type='checkbox'
-          id='active'
-          checked={formData.active}
-          onChange={handleChange}
-        />
-        <Label htmlFor='active'>Disponible para reservas</Label>
-      </div>
+
       <div className='flex justify-end space-x-2 pt-4'>
-        <Button type='button' variant='outline' onClick={onCancel}>
+        <Button
+          type='button'
+          variant='outline'
+          onClick={onCancel}
+          className='cursor-pointer'
+        >
           Cancelar
         </Button>
         <Button
           type='submit'
-          className='bg-primary-green hover:bg-primary-green/90 text-white'
+          className='bg-primary-green hover:bg-primary-green/90 text-white cursor-pointer'
         >
-          {initialData ? 'Actualizar' : 'Crear'} Cabaña
+          {initialData ? 'Actualizar Cabaña' : 'Crear Cabaña'}
         </Button>
       </div>
     </form>

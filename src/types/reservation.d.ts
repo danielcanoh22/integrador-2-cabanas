@@ -1,14 +1,34 @@
-export interface Reservation {
+import { Cabin } from './cabin';
+import { User } from './user';
+
+type ReservationStatus =
+  | 'CONFIRMED'
+  | 'COMPLETED'
+  | 'PENDING'
+  | 'IN_USE'
+  | 'CANCELLED';
+
+export interface BasicReservation {
   id: number;
-  cabinName: string;
-  cabinLocation: string;
-  guestName: string;
-  guestEmail: string;
-  guestPhone: string;
-  checkIn: Date;
-  checkOut: Date;
+  userId: number;
+  cabinId: number;
+  startDate: string;
+  endDate: string;
   guests: number;
-  status: string;
+  status: ReservationStatus;
+  checkInTime: string | null;
+  checkOutTime: string | null;
+  total?: number;
+}
+
+export interface EnrichedReservation extends BasicReservation {
+  user: User;
+  cabin: Cabin;
+}
+
+export interface PageResponse<T> {
+  items: T[];
+  page: number;
+  size: number;
   total: number;
-  createdAt: Date;
 }

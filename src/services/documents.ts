@@ -1,5 +1,30 @@
 import { apiClient } from '@/lib/apiClient';
 
+export type ApiUser = {
+  id: number;
+  email: string;
+  documentNumber: string;
+  fullName: string;
+  role: string;
+  active: boolean;
+};
+
+export async function getUsers() {
+  const endpoint = `/admin/users`;
+  return apiClient(endpoint, {
+    method: 'GET',
+  }) as Promise<ApiUser[]>;
+}
+
+export async function updateUser(user: ApiUser) {
+  const endpoint = `/admin/users/${user.id}`;
+  const body = JSON.stringify(user);
+  return apiClient(endpoint, {
+    method: 'PUT',
+    body,
+  });
+}
+
 export type ApiDocument = {
   id: number;
   documentNumber: string;

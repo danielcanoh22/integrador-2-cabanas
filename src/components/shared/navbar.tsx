@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '../ui/button';
 import {
@@ -15,6 +15,8 @@ import {
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Cookies from 'js-cookie';
+import { isAdmin } from '@/lib/auth';
+import { useUserProfile } from '@/hooks/useUsers';
 import {
   Sheet,
   SheetContent,
@@ -25,22 +27,28 @@ import {
   SheetDescription,
 } from '@/components/ui/sheet';
 import { ThemeButton } from './theme-button';
-
-const mockUser = {
-  name: 'Usuario',
-  role: 'admin',
-};
+import { ChangePasswordModal } from './change-password-modal';
 
 export const Navbar = () => {
   const router = useRouter();
   const pathname = usePathname();
-  const [user] = useState(mockUser);
-  const isAdmin = user.role === 'admin';
+  const [isUserAdmin, setIsUserAdmin] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
+
+  // Usar TanStack Query para obtener perfil de usuario
+  const { data: user } = useUserProfile();
+
+  useEffect(() => {
+    const token = Cookies.get('accessToken');
+    if (token) {
+      setIsUserAdmin(isAdmin(token));
+    }
+  }, []);
 
   const navigation = [
     { name: 'Cabañas', href: '/cabins', icon: Home },
     { name: 'Mis Reservas', href: '/reservations', icon: Calendar },
-    ...(isAdmin
+    ...(isUserAdmin
       ? [
           {
             name: 'Gestionar Cabañas',
@@ -53,7 +61,7 @@ export const Navbar = () => {
             icon: Settings,
           },
           {
-            name: 'Gestionar Documentos',
+            name: 'Gestionar Usuarios',
             href: '/admin/documents-management',
             icon: UserRoundCheck,
           },
@@ -105,10 +113,20 @@ export const Navbar = () => {
           </nav>
 
           <div className='hidden md:flex items-center space-x-4'>
-            {/* <span className='text-sm text-muted-foreground'>
-              Hola, {user.name}
-            </span> */}
+            {user && (
+              <span className='text-sm text-muted-foreground'>
+                Bienvenido, {user.fullName}
+              </span>
+            )}
             <ThemeButton />
+            <Button
+              variant='ghost'
+              size='icon'
+              onClick={() => setShowChangePassword(true)}
+              className='cursor-pointer hover:bg-primary-purple hover:text-white'
+            >
+              <Settings className='h-5 w-5' />
+            </Button>
             <Button
               variant='ghost'
               size='icon'
@@ -166,10 +184,12 @@ export const Navbar = () => {
 
                   <div className='mt-auto'>
                     <hr className='my-4' />
-                    <div className='flex items-center space-x-3 p-3 justify-self-end'>
-                      {/* <span className='text-lg text-muted-foreground'>
-                        Hola, {user.name}
-                      </span> */}
+                    <div className='flex items-center space-x-3 p-3 justify-between'>
+                      {user && (
+                        <span className='text-sm text-muted-foreground'>
+                          Bienvenido, {user.fullName}
+                        </span>
+                      )}
                       <Button
                         variant='ghost'
                         size='icon'
@@ -186,6 +206,11 @@ export const Navbar = () => {
           </div>
         </div>
       </div>
+
+      <ChangePasswordModal
+        open={showChangePassword}
+        onOpenChange={setShowChangePassword}
+      />
     </header>
   );
 };

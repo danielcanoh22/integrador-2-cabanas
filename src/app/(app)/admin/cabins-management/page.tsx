@@ -21,44 +21,28 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-  createCabin,
-  deleteCabin,
-  getAllAdminCabins,
-  updateCabin,
-} from '@/services/cabins-admin';
 import { Cabin, CabinFormData, CabinPayload } from '@/types/cabin';
 import { Plus } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
+import { useState } from 'react';
+import {
+  useAdminCabins,
+  useCreateAdminCabin,
+  useUpdateAdminCabin,
+  useDeleteAdminCabin,
+  useUpdateAdminCabinStatus,
+} from '@/hooks/useAdminCabins';
 
 export default function CabinsManagement() {
-  const [cabins, setCabins] = useState<Cabin[]>([]);
+  const { data: cabins = [], isLoading, error } = useAdminCabins();
+  const createCabinMutation = useCreateAdminCabin();
+  const updateCabinMutation = useUpdateAdminCabin();
+  const deleteCabinMutation = useDeleteAdminCabin();
+  const updateStatusMutation = useUpdateAdminCabinStatus();
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCabin, setEditingCabin] = useState<Cabin | null>(null);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [cabinToDelete, setCabinToDelete] = useState<number | null>(null);
-
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const loadCabins = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const data = await getAllAdminCabins();
-        setCabins(data);
-      } catch (err) {
-        setError((err as Error).message);
-        toast.error('No se pudieron cargar las cabañas.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadCabins();
-  }, []);
 
   const handleSubmit = async (formData: CabinFormData) => {
     const payload: CabinPayload = {
@@ -84,37 +68,18 @@ export default function CabinsManagement() {
       defaultCheckOutTime: formData.defaultCheckOutTime || '11:00',
     };
 
-    console.log(payload);
-
     if (editingCabin) {
-      const updatedCabin = await updateCabin(editingCabin.id, payload);
-
-      setCabins(
-        cabins.map((c) =>
-          c.id === updatedCabin.id
-            ? {
-                ...updatedCabin,
-                amenities: updatedCabin.amenities,
-                location: updatedCabin.location,
-              }
-            : c
-        )
-      );
-      toast.success('Cabaña actualizada con éxito');
-    } else {
-      const newCabin = await createCabin(payload);
-      setCabins((prev) => [
-        ...prev,
+      updateCabinMutation.mutate(
+        { id: editingCabin.id, data: payload },
         {
-          ...newCabin,
-          amenities: newCabin.amenities,
-          location: newCabin.location,
-        },
-      ]);
-      toast.success('Cabaña creada con éxito');
+          onSuccess: () => closeDialog(),
+        }
+      );
+    } else {
+      createCabinMutation.mutate(payload, {
+        onSuccess: () => closeDialog(),
+      });
     }
-
-    closeDialog();
   };
 
   const handleEdit = (cabin: Cabin) => {
@@ -122,32 +87,23 @@ export default function CabinsManagement() {
     setIsDialogOpen(true);
   };
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = () => {
     if (!cabinToDelete) return;
 
-    try {
-      await deleteCabin(cabinToDelete);
-
-      setCabins((prevCabins) =>
-        prevCabins.filter((cabin) => cabin.id !== cabinToDelete)
-      );
-
-      toast.success('La cabaña ha sido eliminada');
-    } catch (error) {
-      toast.error((error as Error).message || 'No se pudo eliminar la cabaña.');
-    } finally {
-      setIsAlertOpen(false);
-      setCabinToDelete(null);
-    }
+    deleteCabinMutation.mutate(cabinToDelete, {
+      onSettled: () => {
+        setIsAlertOpen(false);
+        setCabinToDelete(null);
+      },
+    });
   };
 
   const toggleAvailability = (id: number) => {
-    setCabins(
-      cabins.map((cabin) =>
-        cabin.id === id ? { ...cabin, active: !cabin.active } : cabin
-      )
-    );
-    toast.success('El estado de disponibilidad ha sido actualizado');
+    const cabin = cabins.find((c) => c.id === id);
+    if (!cabin) return;
+
+    const newActiveStatus = !cabin.active;
+    updateStatusMutation.mutate({ id, active: newActiveStatus });
   };
 
   const openNewCabinDialog = () => {

@@ -1,6 +1,6 @@
- 'use client';
+'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,41 +41,46 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 
+import { User } from '@/types/user';
+import { Document } from '@/types/document';
 import {
-  getUsers,
-  updateUser,
-  type ApiUser,
-  getDocumentsPaged,
-  createDocument,
-  deleteDocument,
-  activateDocument,
-  deactivateDocument,
-  type ApiDocument,
-} from '@/services/documents';
+  useUsers,
+  useUpdateUser,
+  useDocuments,
+  useCreateDocument,
+  useDeleteDocument,
+  useActivateDocument,
+  useDeactivateDocument,
+} from '@/hooks/useDocuments';
 
-type User = ApiUser;
 type IdentityDocument = { id: number; number: string; active: boolean };
 
 export default function DocumentsManagement() {
   const [activeTab, setActiveTab] = useState<'users' | 'documents'>('users');
-  const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-
-  const [documents, setDocuments] = useState<IdentityDocument[]>([]);
   const [docNumber, setDocNumber] = useState('');
   const [docSearchTerm, setDocSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 10;
 
-  const fetchUsers = async () => {
-    const resp = await getUsers();
-    setUsers(resp);
-  };
+  const { data: users = [] } = useUsers();
+  const updateUserMutation = useUpdateUser();
+  const { data: documentsData } = useDocuments(currentPage - 1, itemsPerPage);
+  const createDocumentMutation = useCreateDocument();
+  const deleteDocumentMutation = useDeleteDocument();
+  const activateDocumentMutation = useActivateDocument();
+  const deactivateDocumentMutation = useDeactivateDocument();
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+  const documents = useMemo(() => {
+    const mapApiToLocal = (d: Document): IdentityDocument => ({
+      id: d.id,
+      number: d.documentNumber,
+      active: d.status === 'ACTIVE',
+    });
+    return documentsData?.content.map(mapApiToLocal) || [];
+  }, [documentsData]);
+
+  const totalPages = Math.max(1, documentsData?.totalPages || 1);
 
   const filteredUsers = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
@@ -89,54 +94,19 @@ export default function DocumentsManagement() {
 
   const currentUsers = filteredUsers;
 
-  const handleToggleActive = async (id: number, next: boolean) => {
+  const handleToggleActive = (id: number, next: boolean) => {
     const current = users.find((u) => u.id === id);
     if (!current) return;
     const updated = { ...current, active: next };
-    // Optimistic update
-    setUsers((prev) => prev.map((u) => (u.id === id ? updated : u)));
-    try {
-      await updateUser(updated);
-    } catch (e) {
-      console.error('Error actualizando estado de usuario', e);
-      // rollback
-      setUsers((prev) => prev.map((u) => (u.id === id ? current : u)));
-    }
+    updateUserMutation.mutate(updated);
   };
 
-  const handleChangeRole = async (id: number, role: string) => {
+  const handleChangeRole = (id: number, role: string) => {
     const current = users.find((u) => u.id === id);
     if (!current) return;
     const updated = { ...current, role } as User;
-    // Optimistic update
-    setUsers((prev) => prev.map((u) => (u.id === id ? updated : u)));
-    try {
-      await updateUser(updated);
-    } catch (e) {
-      console.error('Error actualizando rol de usuario', e);
-      // rollback
-      setUsers((prev) => prev.map((u) => (u.id === id ? current : u)));
-    }
+    updateUserMutation.mutate(updated);
   };
-
-  const mapApiToLocal = (d: ApiDocument): IdentityDocument => ({
-    id: d.id,
-    number: d.documentNumber,
-    active: d.status === 'ACTIVE',
-  });
-
-  const fetchDocuments = async (page = currentPage) => {
-    const resp = await getDocumentsPaged(page - 1, itemsPerPage);
-    setDocuments(resp.content.map(mapApiToLocal));
-    setTotalPages(Math.max(1, resp.totalPages || 1));
-  };
-
-  useEffect(() => {
-    if (activeTab === 'documents') {
-      fetchDocuments();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, currentPage]);
 
   const filteredDocuments = useMemo(() => {
     const q = docSearchTerm.trim().toLowerCase();
@@ -146,51 +116,64 @@ export default function DocumentsManagement() {
 
   const currentDocuments = filteredDocuments;
 
-  const handleAddDocument = async () => {
+  const handleAddDocument = () => {
     const value = docNumber.trim();
     if (!value) return;
 
-    const exists = documents.some((d) => d.number.toLowerCase() === value.toLowerCase());
-    if (exists) return;
+    const exists = documents.some(
+      (d) => d.number.toLowerCase() === value.toLowerCase()
+    );
+    if (exists) {
+      alert('El documento ya existe');
+      return;
+    }
 
-    await createDocument(value);
-    setDocNumber('');
-    setCurrentPage(1);
-    await fetchDocuments(1);
+    createDocumentMutation.mutate(value, {
+      onSuccess: () => {
+        setDocNumber('');
+        setCurrentPage(1);
+      },
+    });
   };
 
-  const handleToggleDocumentActive = async (id: number, next: boolean) => {
+  const handleToggleDocumentActive = (id: number, next: boolean) => {
     if (next) {
-      await activateDocument(id);
+      activateDocumentMutation.mutate(id);
     } else {
-      await deactivateDocument(id);
+      deactivateDocumentMutation.mutate(id);
     }
-    setDocuments((prev) => prev.map((d) => (d.id === id ? { ...d, active: next } : d)));
   };
 
-  const handleDeleteDocument = async (id: number) => {
-    await deleteDocument(id);
-    if (documents.length === 1 && currentPage > 1) {
-      const prevPage = currentPage - 1;
-      setCurrentPage(prevPage);
-      await fetchDocuments(prevPage);
-    } else {
-      await fetchDocuments();
-    }
+  const handleDeleteDocument = (id: number) => {
+    deleteDocumentMutation.mutate(id, {
+      onSuccess: () => {
+        if (documents.length === 1 && currentPage > 1) {
+          setCurrentPage(currentPage - 1);
+        }
+      },
+    });
   };
 
   return (
     <div className='container mx-auto px-4 py-8'>
       <div className='mb-6'>
-        <h1 className='text-3xl font-bold mb-2 text-primary-purple'>Administración</h1>
+        <h1 className='text-3xl font-bold mb-2 text-primary-purple'>
+          Administración
+        </h1>
         <p className='text-muted-foreground'>Usuarios y Documentos</p>
       </div>
 
       <div className='flex items-center gap-2 mb-6'>
-        <Button variant={activeTab === 'users' ? 'default' : 'secondary'} onClick={() => setActiveTab('users')}>
+        <Button
+          variant={activeTab === 'users' ? 'default' : 'secondary'}
+          onClick={() => setActiveTab('users')}
+        >
           Usuarios
         </Button>
-        <Button variant={activeTab === 'documents' ? 'default' : 'secondary'} onClick={() => setActiveTab('documents')}>
+        <Button
+          variant={activeTab === 'documents' ? 'default' : 'secondary'}
+          onClick={() => setActiveTab('documents')}
+        >
           Documentos
         </Button>
       </div>
@@ -227,7 +210,10 @@ export default function DocumentsManagement() {
                 <TableBody>
                   {currentUsers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className='text-center py-8 text-muted-foreground'>
+                      <TableCell
+                        colSpan={6}
+                        className='text-center py-8 text-muted-foreground'
+                      >
                         No hay usuarios
                       </TableCell>
                     </TableRow>
@@ -239,21 +225,37 @@ export default function DocumentsManagement() {
                         <TableCell>{u.documentNumber}</TableCell>
                         <TableCell>{u.fullName}</TableCell>
                         <TableCell>
-                          <Select value={u.role} onValueChange={(val) => handleChangeRole(u.id, val)}>
+                          <Select
+                            value={u.role}
+                            onValueChange={(val) => handleChangeRole(u.id, val)}
+                          >
                             <SelectTrigger className='w-[160px]'>
                               <SelectValue placeholder='Seleccionar rol' />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value='ADMIN'>ADMIN</SelectItem>
-                              <SelectItem value='PROFESSOR'>PROFESSOR</SelectItem>
+                              <SelectItem value='PROFESSOR'>
+                                PROFESSOR
+                              </SelectItem>
                               <SelectItem value='RETIREE'>RETIREE</SelectItem>
                             </SelectContent>
                           </Select>
                         </TableCell>
                         <TableCell>
                           <div className='flex items-center gap-2'>
-                            <Switch checked={u.active} onCheckedChange={(v) => handleToggleActive(u.id, v)} />
-                            <span className={u.active ? 'text-green-600' : 'text-muted-foreground'}>
+                            <Switch
+                              checked={u.active}
+                              onCheckedChange={(v) =>
+                                handleToggleActive(u.id, v)
+                              }
+                            />
+                            <span
+                              className={
+                                u.active
+                                  ? 'text-green-600'
+                                  : 'text-muted-foreground'
+                              }
+                            >
                               {u.active ? 'Activo' : 'Inactivo'}
                             </span>
                           </div>
@@ -272,7 +274,9 @@ export default function DocumentsManagement() {
         <>
           <Card className='mb-6'>
             <CardHeader className='pb-2'>
-              <CardTitle className='text-base'>Agregar/Habilitar documento</CardTitle>
+              <CardTitle className='text-base'>
+                Agregar/Habilitar documento
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className='flex flex-col md:flex-row gap-3'>
@@ -316,7 +320,10 @@ export default function DocumentsManagement() {
                 <TableBody>
                   {currentDocuments.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className='text-center py-8 text-muted-foreground'>
+                      <TableCell
+                        colSpan={4}
+                        className='text-center py-8 text-muted-foreground'
+                      >
                         No hay documentos
                       </TableCell>
                     </TableRow>
@@ -329,9 +336,17 @@ export default function DocumentsManagement() {
                           <div className='flex items-center gap-2'>
                             <Switch
                               checked={doc.active}
-                              onCheckedChange={(v) => handleToggleDocumentActive(doc.id, v)}
+                              onCheckedChange={(v) =>
+                                handleToggleDocumentActive(doc.id, v)
+                              }
                             />
-                            <span className={doc.active ? 'text-green-600' : 'text-muted-foreground'}>
+                            <span
+                              className={
+                                doc.active
+                                  ? 'text-green-600'
+                                  : 'text-muted-foreground'
+                              }
+                            >
                               {doc.active ? 'Activo' : 'Inactivo'}
                             </span>
                           </div>
@@ -340,17 +355,27 @@ export default function DocumentsManagement() {
                           <div className='flex items-center justify-end gap-2'>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button variant='destructive' size='sm' className='gap-2'>
+                                <Button
+                                  variant='destructive'
+                                  size='sm'
+                                  className='gap-2'
+                                >
                                   Eliminar
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>¿Eliminar documento?</AlertDialogTitle>
+                                  <AlertDialogTitle>
+                                    ¿Eliminar documento?
+                                  </AlertDialogTitle>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDeleteDocument(doc.id)}>
+                                  <AlertDialogCancel>
+                                    Cancelar
+                                  </AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeleteDocument(doc.id)}
+                                  >
                                     Eliminar
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
@@ -373,24 +398,36 @@ export default function DocumentsManagement() {
                   <PaginationItem>
                     <PaginationPrevious
                       onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                      className={
+                        currentPage === 1
+                          ? 'pointer-events-none opacity-50'
+                          : 'cursor-pointer'
+                      }
                     />
                   </PaginationItem>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <PaginationItem key={page}>
-                      <PaginationLink
-                        onClick={() => setCurrentPage(page)}
-                        isActive={currentPage === page}
-                        className='cursor-pointer'
-                      >
-                        {page}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    (page) => (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          onClick={() => setCurrentPage(page)}
+                          isActive={currentPage === page}
+                          className='cursor-pointer'
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    )
+                  )}
                   <PaginationItem>
                     <PaginationNext
-                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                      className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                      onClick={() =>
+                        setCurrentPage((p) => Math.min(totalPages, p + 1))
+                      }
+                      className={
+                        currentPage === totalPages
+                          ? 'pointer-events-none opacity-50'
+                          : 'cursor-pointer'
+                      }
                     />
                   </PaginationItem>
                 </PaginationContent>

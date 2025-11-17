@@ -69,3 +69,7 @@ export interface CabinPayload {
   defaultCheckInTime: string;
   defaultCheckOutTime: string;
 }
+
+export interface UpdateCabinStatusRequest {
+  active: boolean;
+}

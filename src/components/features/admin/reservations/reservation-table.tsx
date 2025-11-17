@@ -19,22 +19,52 @@ import { formatPrice } from '@/lib/helpers';
 import { EnrichedReservation } from '@/types/reservation';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Calendar, Mail, MapPin, Phone } from 'lucide-react';
+import { Calendar, Mail, MapPin } from 'lucide-react';
 
 const getStatusBadge = (status: string) => {
   switch (status) {
-    case 'confirmed':
+    case 'CONFIRMED':
       return (
         <Badge className='bg-green-500 hover:bg-green-600'>Confirmada</Badge>
       );
-    case 'pending':
+    case 'PENDING':
       return (
         <Badge className='bg-yellow-500 hover:bg-yellow-600'>Pendiente</Badge>
       );
-    case 'cancelled':
+    case 'CANCELLED':
       return <Badge variant='destructive'>Cancelada</Badge>;
+    case 'IN_USE':
+      return <Badge className='bg-blue-500 hover:bg-blue-600'>En uso</Badge>;
+    case 'COMPLETED':
+      return (
+        <Badge className='bg-gray-500 hover:bg-gray-600'>Completada</Badge>
+      );
     default:
       return <Badge variant='outline'>{status}</Badge>;
+  }
+};
+
+const getValidTransitions = (currentStatus: string) => {
+  switch (currentStatus) {
+    case 'PENDING':
+      return [
+        { value: 'PENDING', label: 'Pendiente' },
+        { value: 'CONFIRMED', label: 'Confirmar' },
+        { value: 'CANCELLED', label: 'Cancelar' },
+      ];
+    case 'CONFIRMED':
+      return [
+        { value: 'CONFIRMED', label: 'Confirmada' },
+        { value: 'CANCELLED', label: 'Cancelar' },
+      ];
+    case 'IN_USE':
+      return [
+        { value: 'IN_USE', label: 'En uso' },
+        { value: 'COMPLETED', label: 'Completar' },
+        { value: 'CANCELLED', label: 'Cancelar' },
+      ];
+    default:
+      return [{ value: currentStatus, label: currentStatus }];
   }
 };
 
@@ -97,10 +127,6 @@ export const ReservationsTable = ({
                       <Mail className='h-3 w-3 mr-1' />
                       {reservation.user.email}
                     </div>
-                    {/* <div className='flex items-center text-sm text-muted-foreground'>
-                      <Phone className='h-3 w-3 mr-1' />
-                      test
-                    </div> */}
                   </div>
                 </TableCell>
                 <TableCell>
@@ -118,27 +144,47 @@ export const ReservationsTable = ({
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className='font-bold text-cooprudea-teal'>
-                    {formatPrice(reservation.total || 0)}
+                  <div className='space-y-1'>
+                    {reservation.basePrice && (
+                      <div className='text-sm text-muted-foreground'>
+                        Base: {formatPrice(reservation.basePrice)}
+                      </div>
+                    )}
+                    <div className='font-bold text-cooprudea-teal'>
+                      Total:{' '}
+                      {formatPrice(
+                        reservation.finalPrice || reservation.total || 0
+                      )}
+                    </div>
                   </div>
                 </TableCell>
                 <TableCell>{getStatusBadge(reservation.status)}</TableCell>
                 <TableCell className='text-right'>
                   {(reservation.status === 'PENDING' ||
-                    reservation.status === 'CONFIRMED') && (
+                    reservation.status === 'CONFIRMED' ||
+                    reservation.status === 'IN_USE') && (
                     <Select
                       value={reservation.status}
-                      onValueChange={(value) =>
-                        onStatusChange(reservation.id, value)
-                      }
+                      onValueChange={(value) => {
+                        if (value !== reservation.status) {
+                          onStatusChange(reservation.id, value);
+                        }
+                      }}
                     >
                       <SelectTrigger className='w-[130px]'>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value='PENDING'>Pendiente</SelectItem>
-                        <SelectItem value='CONFIRMED'>Confirmar</SelectItem>
-                        <SelectItem value='CANCELLED'>Cancelar</SelectItem>
+                        {getValidTransitions(reservation.status).map(
+                          (transition) => (
+                            <SelectItem
+                              key={transition.value}
+                              value={transition.value}
+                            >
+                              {transition.label}
+                            </SelectItem>
+                          )
+                        )}
                       </SelectContent>
                     </Select>
                   )}

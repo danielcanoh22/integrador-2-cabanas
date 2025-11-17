@@ -1,6 +1,14 @@
 import { apiClient } from '@/lib/apiClient';
-import { ApiCabinResponse, Cabin, CabinPayload } from '@/types/cabin';
+import {
+  ApiCabinResponse,
+  Cabin,
+  CabinPayload,
+  UpdateCabinStatusRequest,
+} from '@/types/cabin';
 
+/**
+ * Obtiene todas las cabañas (admin)
+ */
 export async function getAllAdminCabins(): Promise<Cabin[]> {
   const rawCabins: ApiCabinResponse[] = await apiClient('/admin/cabins', {
     method: 'GET',
@@ -13,6 +21,9 @@ export async function getAllAdminCabins(): Promise<Cabin[]> {
   }));
 }
 
+/**
+ * Obtiene una cabaña por ID
+ */
 export async function getCabinByIdAdmin(id: number): Promise<Cabin> {
   const cabin: ApiCabinResponse = await apiClient(`/admin/cabins/${id}`, {
     method: 'GET',
@@ -25,6 +36,9 @@ export async function getCabinByIdAdmin(id: number): Promise<Cabin> {
   };
 }
 
+/**
+ * Crea una cabaña
+ */
 export async function createCabin(cabinData: CabinPayload): Promise<Cabin> {
   return apiClient('/admin/cabins', {
     method: 'POST',
@@ -32,6 +46,9 @@ export async function createCabin(cabinData: CabinPayload): Promise<Cabin> {
   });
 }
 
+/**
+ * Actualiza una cabaña
+ */
 export async function updateCabin(
   id: number,
   cabinData: CabinPayload
@@ -42,8 +59,24 @@ export async function updateCabin(
   });
 }
 
+/**
+ * Elimina una cabaña
+ */
 export async function deleteCabin(id: number): Promise<void> {
   return apiClient(`/admin/cabins/${id}`, {
     method: 'DELETE',
+  });
+}
+
+/**
+ * Actualiza el estado (activo/inactivo) de una cabaña
+ */
+export async function updateCabinStatus(
+  id: number,
+  data: UpdateCabinStatusRequest
+): Promise<void> {
+  await apiClient(`/admin/cabins/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
   });
 }

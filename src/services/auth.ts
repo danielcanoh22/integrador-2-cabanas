@@ -1,5 +1,10 @@
 import Cookies from 'js-cookie';
-import { LoginCredentials, LoginResponse } from '@/types/auth';
+import {
+  LoginCredentials,
+  LoginResponse,
+  RegisterPayload,
+  RegisterResponse,
+} from '@/types/auth';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -58,18 +63,9 @@ export async function refreshToken(): Promise<string> {
   return accessToken;
 }
 
-// Registro de nuevos usuarios
-export type RegisterPayload = {
-  documentNumber: string;
-  email: string;
-  name: string;
-  phone: string; // formato +57-300-999-9999
-  pin: string; // 4 dígitos
-  role: 'PROFESSOR' | 'RETIREE';
-};
-
-export type RegisterResponse = unknown;
-
+/**
+ * Registra un nuevo usuario
+ */
 export async function register(
   payload: RegisterPayload
 ): Promise<RegisterResponse> {

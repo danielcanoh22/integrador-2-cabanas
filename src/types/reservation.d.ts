@@ -19,6 +19,8 @@ export interface BasicReservation {
   checkInTime: string | null;
   checkOutTime: string | null;
   total?: number;
+  basePrice?: number;
+  finalPrice?: number;
 }
 
 export interface EnrichedReservation extends BasicReservation {
@@ -31,4 +33,16 @@ export interface PageResponse<T> {
   page: number;
   size: number;
   total: number;
+}
+
+export interface CreateReservationRequest {
+  userId: number;
+  cabinId: number;
+  startDate: string;
+  endDate: string;
+  guests: number;
+}
+
+export interface UpdateReservationStatusRequest {
+  status: ReservationStatus;
 }

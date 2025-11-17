@@ -4,6 +4,7 @@ import './globals.css';
 import 'react-calendar/dist/Calendar.css';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { ToasterProvider } from '@/components/providers/toaster-provider';
+import { QueryProvider } from '@/components/providers/query-provider';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -30,15 +31,17 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider
-          attribute='class'
-          defaultTheme='system'
-          enableSystem
-          disableTransitionOnChange
-        >
-          <ToasterProvider />
-          {children}
-        </ThemeProvider>
+        <QueryProvider>
+          <ThemeProvider
+            attribute='class'
+            defaultTheme='system'
+            enableSystem
+            disableTransitionOnChange
+          >
+            <ToasterProvider />
+            {children}
+          </ThemeProvider>
+        </QueryProvider>
       </body>
     </html>
   );

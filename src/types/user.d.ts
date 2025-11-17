@@ -8,3 +8,8 @@ export interface User {
   role: UserRole;
   active: boolean;
 }
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}

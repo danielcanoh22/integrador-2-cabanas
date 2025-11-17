@@ -16,7 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { register as registerService, RegisterPayload } from '@/services/auth';
+import { register as registerService } from '@/services/auth';
+import { RegisterPayload } from '@/types/auth';
 
 export default function Register() {
   const router = useRouter();
@@ -32,9 +33,8 @@ export default function Register() {
 
   const formatPhone = (raw: string) => {
     const digits = raw.replace(/[^\d]/g, '');
-    // Espera números colombianos 10 dígitos (ej: 3001234567)
     const local = digits.slice(-10);
-    if (local.length < 10) return `+57-${local}`; // fallback parcial
+    if (local.length < 10) return `+57-${local}`;
     return `+57-${local.slice(0, 3)}-${local.slice(3, 6)}-${local.slice(
       6,
       10

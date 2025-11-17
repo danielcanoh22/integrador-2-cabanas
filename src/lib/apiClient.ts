@@ -17,14 +17,12 @@ export async function apiClient(endpoint: string, options: RequestInit = {}) {
 
   if (res.status === 401 || res.status === 500) {
     try {
-      console.log('Token de acceso expirado. Intentando renovar...');
       const newAccessToken = await refreshToken();
       Cookies.set('accessToken', newAccessToken);
 
       headers['Authorization'] = `Bearer ${newAccessToken}`;
       res = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
     } catch (refreshError) {
-      console.error('Falló la renovación del token. Redirigiendo al login.');
       Cookies.remove('accessToken');
       Cookies.remove('refreshToken');
       window.location.href = '/login';
@@ -35,6 +33,10 @@ export async function apiClient(endpoint: string, options: RequestInit = {}) {
   if (!res.ok) {
     const errorData = await res.json();
     throw new Error(errorData.message || 'Ocurrió un error en la petición');
+  }
+
+  if (res.status === 204) {
+    return null;
   }
 
   return res.json();

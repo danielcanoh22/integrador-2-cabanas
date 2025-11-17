@@ -1,3 +1,5 @@
+import { BasicReservation } from '@/types/reservation';
+
 export const formatPrice = (price: number) => {
   return new Intl.NumberFormat('es-CO', {
     style: 'currency',
@@ -7,12 +9,15 @@ export const formatPrice = (price: number) => {
   }).format(price);
 };
 
-// TODO: Crear el tipo Reservation. Cambiar los estados por los que devuelva el backend.
-export const sortReservationsByStatus = (reservations) => {
+export const sortReservationsByStatus = <T extends BasicReservation>(
+  reservations: T[]
+): T[] => {
   const statusOrder = {
-    pendiente: 1,
-    confirmada: 2,
-    cancelada: 3,
+    PENDING: 1,
+    CONFIRMED: 2,
+    IN_USE: 3,
+    COMPLETED: 4,
+    CANCELLED: 5,
   };
 
   const reservationsToSort = [...reservations];
@@ -25,7 +30,10 @@ export const sortReservationsByStatus = (reservations) => {
       return orderA - orderB;
     }
 
-    return b.createdAt.getTime() - a.createdAt.getTime();
+    const dateA = a.startDate ? new Date(a.startDate).getTime() : 0;
+    const dateB = b.startDate ? new Date(b.startDate).getTime() : 0;
+
+    return dateB - dateA;
   });
 
   return reservationsToSort;

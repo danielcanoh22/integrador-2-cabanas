@@ -21,7 +21,7 @@ import { formatPrice } from '@/lib/helpers';
 import { getMonthlyAvailability } from '@/services/availability';
 import { AvailabilityMap } from '@/types/availability';
 import { Cabin } from '@/types/cabin';
-import { format, startOfMonth } from 'date-fns';
+import { format, startOfMonth, addMonths, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -29,21 +29,14 @@ import { useEffect, useState } from 'react';
 import Calendar from 'react-calendar';
 import { Value } from 'react-calendar/dist/shared/types.js';
 import toast from 'react-hot-toast';
+import { getUserId } from '@/lib/auth';
+import Cookies from 'js-cookie';
+import { useCreateReservation } from '@/hooks/useReservations';
 
 type CabinDetailCalendarProps = {
   cabin: Cabin;
 };
 
-const MOCK_DATES: Record<string, boolean> = {
-  '2025-10-10': false,
-  '2025-10-11': false,
-  '2025-10-12': false,
-  '2025-10-30': false,
-  '2025-10-31': false,
-};
-
-// TODO: Solucionar errores de tipado cuando se arregle
-// el endpoint de availability
 export const CabinDetailSidebar = ({ cabin }: CabinDetailCalendarProps) => {
   const [availabilityMap, setAvailabilityMap] = useState<AvailabilityMap>({});
   const [checkIn, setCheckIn] = useState<Date>();
@@ -54,13 +47,34 @@ export const CabinDetailSidebar = ({ cabin }: CabinDetailCalendarProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const router = useRouter();
+  const createReservationMutation = useCreateReservation();
 
   useEffect(() => {
     const fetchAvailability = async () => {
       const year = currentMonth.getFullYear();
       const month = currentMonth.getMonth() + 1;
-      const newMap = await getMonthlyAvailability(cabin.id, year, month);
-      setAvailabilityMap(newMap);
+      const currentMap = await getMonthlyAvailability(cabin.id, year, month);
+
+      const prevMonth = subMonths(currentMonth, 1);
+      const prevYear = prevMonth.getFullYear();
+      const prevMonthNum = prevMonth.getMonth() + 1;
+      const prevMap = await getMonthlyAvailability(
+        cabin.id,
+        prevYear,
+        prevMonthNum
+      );
+
+      const nextMonth = addMonths(currentMonth, 1);
+      const nextYear = nextMonth.getFullYear();
+      const nextMonthNum = nextMonth.getMonth() + 1;
+      const nextMap = await getMonthlyAvailability(
+        cabin.id,
+        nextYear,
+        nextMonthNum
+      );
+
+      const combinedMap = { ...prevMap, ...currentMap, ...nextMap };
+      setAvailabilityMap(combinedMap);
     };
 
     fetchAvailability();
@@ -119,20 +133,49 @@ export const CabinDetailSidebar = ({ cabin }: CabinDetailCalendarProps) => {
     }
   };
 
-  const handleReservation = () => {
-    setIsReserving(true); // Activa el estado de carga
+  const handleReservation = async () => {
+    if (!checkIn || !checkOut) {
+      toast.error('Por favor selecciona las fechas de entrada y salida');
+      return;
+    }
 
-    // Simula la llamada a la API
-    setTimeout(() => {
-      toast.success('Reserva realizada con éxito', {
-        duration: 3000,
-        position: 'bottom-right',
-      });
+    const token = Cookies.get('accessToken');
+    if (!token) {
+      toast.error('Debes iniciar sesión para hacer una reserva');
+      router.push('/login');
+      return;
+    }
 
-      setIsReserving(false); // Desactiva el estado de carga
-      setIsModalOpen(false); // Cierra el modal
-      router.push('/reservations'); // Redirige al usuario
-    }, 2000);
+    const userId = getUserId(token);
+    if (!userId) {
+      toast.error('Error al obtener información del usuario');
+      return;
+    }
+
+    setIsReserving(true);
+
+    createReservationMutation.mutate(
+      {
+        userId,
+        cabinId: cabin.id,
+        startDate: format(checkIn, 'yyyy-MM-dd'),
+        endDate: format(checkOut, 'yyyy-MM-dd'),
+        guests: cabin.capacity,
+      },
+      {
+        onSuccess: () => {
+          setIsModalOpen(false);
+          setIsReserving(false);
+          setTimeout(() => {
+            router.push('/reservations');
+          }, 500);
+        },
+        onError: (error) => {
+          toast.error((error as Error).message || 'Error al crear la reserva');
+          setIsReserving(false);
+        },
+      }
+    );
   };
 
   const tileClassName = ({ date, view }: { date: Date; view: string }) => {
@@ -147,7 +190,6 @@ export const CabinDetailSidebar = ({ cabin }: CabinDetailCalendarProps) => {
     }
 
     const dateString = format(date, 'yyyy-MM-dd');
-    // if (availabilityMap[dateString] === false) {
     if (availabilityMap[dateString] === false) {
       return `${baseClass} calendar-tile-occupied`;
     }
@@ -182,7 +224,6 @@ export const CabinDetailSidebar = ({ cabin }: CabinDetailCalendarProps) => {
     if (date < today) return true;
 
     const dateString = format(date, 'yyyy-MM-dd');
-    // return availabilityMap[dateString] === false;
     return availabilityMap[dateString] === false;
   };
 
@@ -253,7 +294,6 @@ export const CabinDetailSidebar = ({ cabin }: CabinDetailCalendarProps) => {
             </div>
           </div>
 
-          {/* Selected dates display */}
           {checkIn && (
             <div className='space-y-2 p-4 bg-white/50 dark:bg-[#212121] dark:border-0 rounded-lg border border-cooprudea-teal/20'>
               <div className='flex items-center justify-between text-sm'>
@@ -279,7 +319,6 @@ export const CabinDetailSidebar = ({ cabin }: CabinDetailCalendarProps) => {
           )}
         </div>
 
-        {/* Price breakdown */}
         {checkIn && checkOut && (
           <div className='space-y-2 pt-4 border-t'>
             <div className='flex justify-between text-sm'>
@@ -294,14 +333,6 @@ export const CabinDetailSidebar = ({ cabin }: CabinDetailCalendarProps) => {
             </div>
           </div>
         )}
-        {/* 
-        <Button
-          onClick={handleReservation}
-          disabled={!checkIn || !checkOut || isReserving}
-          className='w-full bg-primary-green hover:bg-primary-green/90 cursor-pointer text-white shadow-lg transition-all duration-150 transform hover:scale-[1.01]'
-        >
-          {isReserving ? 'Procesando...' : 'Reservar Ahora'}
-        </Button> */}
 
         <AlertDialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <AlertDialogTrigger asChild>
@@ -316,7 +347,6 @@ export const CabinDetailSidebar = ({ cabin }: CabinDetailCalendarProps) => {
             <AlertDialogHeader>
               <AlertDialogTitle>¿Confirmar tu reserva?</AlertDialogTitle>
               <AlertDialogDescription>
-                {/* Mostramos un resumen de la reserva para confirmar */}
                 <div className='space-y-2 mt-4 text-sm'>
                   <div className='flex justify-between'>
                     <span className='text-muted-foreground'>Cabaña:</span>
@@ -349,7 +379,6 @@ export const CabinDetailSidebar = ({ cabin }: CabinDetailCalendarProps) => {
               <AlertDialogCancel className='cursor-pointer transition-all duration-150 transform hover:scale-[1.01]'>
                 Cancelar
               </AlertDialogCancel>
-              {/* El botón de 'Continuar' ahora es el que llama a handleReservation */}
               <AlertDialogAction
                 onClick={handleReservation}
                 className='bg-primary-green hover:bg-primary-green/90 cursor-pointer text-white shadow-lg transition-all duration-150 transform hover:scale-[1.01]'

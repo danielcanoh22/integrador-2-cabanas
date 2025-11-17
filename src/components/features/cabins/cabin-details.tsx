@@ -1,12 +1,11 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
-import Image from 'next/image';
-import { ArrowLeft, MapPin, Star } from 'lucide-react';
-import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Cabin } from '@/types/cabin';
+import { MapPin, Star, Clock, ArrowLeft } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
 import { CabinDetailSidebar } from './cabin-detail-sidebar';
 
 type CabinDetailsProps = {
@@ -14,14 +13,11 @@ type CabinDetailsProps = {
 };
 
 export const CabinDetails = ({ cabin }: CabinDetailsProps) => {
-  // const { toast } = useToast();
-
   if (!cabin) {
     return (
       <div className='container mx-auto px-4 py-8'>
         <div className='text-center'>
           <h2 className='text-2xl font-bold mb-4'>Cabaña no encontrada</h2>
-          {/* <Button onClick={() => navigate('/')}>Volver a Cabañas</Button> */}
         </div>
       </div>
     );
@@ -73,6 +69,35 @@ export const CabinDetails = ({ cabin }: CabinDetailsProps) => {
             <p className='text-lg text-muted-foreground'>{cabin.description}</p>
           </div>
 
+          <Card className='border-0 shadow-soft'>
+            <CardContent className='p-6'>
+              <div className='flex items-center mb-4'>
+                <Clock className='h-5 w-5 mr-2 text-primary-purple' />
+                <h3 className='text-lg font-semibold text-primary-purple'>
+                  Horarios
+                </h3>
+              </div>
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                <div className='flex flex-col'>
+                  <span className='text-sm text-muted-foreground'>
+                    Check-in
+                  </span>
+                  <span className='text-lg font-medium'>
+                    {cabin.defaultCheckInTime}
+                  </span>
+                </div>
+                <div className='flex flex-col'>
+                  <span className='text-sm text-muted-foreground'>
+                    Check-out
+                  </span>
+                  <span className='text-lg font-medium'>
+                    {cabin.defaultCheckOutTime}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className='border-0 shadow-soft overflow-hidden pt-0'>
             <CardHeader className='bg-primary-purple/10 py-6'>
               <CardTitle className='text-2xl flex items-center text-primary-purple'>
@@ -82,17 +107,6 @@ export const CabinDetails = ({ cabin }: CabinDetailsProps) => {
             </CardHeader>
             <CardContent className='p-8'>
               <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                {/* {cabin.features.map((feature, index) => (
-                  <div
-                    key={index}
-                    className='group flex items-start space-x-4 p-4 rounded-xl hover:bg-gradient-to-r hover:from-primary-purple/10 hover:to-transparent transition-all duration-300'
-                  >
-                    <div className='w-3 h-3 rounded-full bg-gradient-to-r from-primary-purple/80 to-primary-pink/80 mt-2 flex-shrink-0 shadow-sm group-hover:scale-125 transition-transform duration-200'></div>
-                    <span className='text-gray-500 text-lg leading-relaxed group-hover:text-primary-purple transition-colors duration-300'>
-                      {feature}
-                    </span>
-                  </div>
-                ))} */}
                 {Array.isArray(cabin.amenities) &&
                   cabin.amenities.map((feature, index) => (
                     <div

@@ -59,7 +59,12 @@ export default function ReservationManagement() {
       pending: reservations.filter((r) => r.status === 'PENDING').length,
       cancelled: reservations.filter((r) => r.status === 'CANCELLED').length,
       totalRevenue: reservations
-        .filter((r) => r.status === 'CONFIRMED')
+        .filter(
+          (r) =>
+            r.status === 'CONFIRMED' ||
+            r.status === 'IN_USE' ||
+            r.status === 'COMPLETED'
+        )
         .reduce((sum, r) => sum + (r.finalPrice || r.total || 0), 0),
     }),
     [reservations]

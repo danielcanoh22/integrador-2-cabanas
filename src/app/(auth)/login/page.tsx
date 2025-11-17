@@ -68,14 +68,14 @@ export default function Login() {
                 <div className='flex items-center justify-between'>
                   <Label htmlFor='password'>Contraseña</Label>
 
-                  <div className='text-center text-sm'>
+                  {/* <div className='text-center text-sm'>
                     <a
                       href='#'
                       className='ml-auto inline-block text-sm text-gray-700 dark:text-gray-300 underline-offset-4 hover:underline'
                     >
                       ¿Olvidaste tu contraseña?
                     </a>
-                  </div>
+                  </div> */}
                 </div>
                 <Input
                   id='password'

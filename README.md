@@ -140,6 +140,21 @@ npm start
 - ✅ Búsqueda y filtrado
 - ✅ Gestión de documentos de identidad permitidos
 
+#### **⚙️ Configuración del Sistema**
+
+- ✅ Cantidad máxima de reservas permitidas por año por usuario
+- ✅ Modo mantenimiento del sistema
+- ✅ Días de penalización por cancelación
+- ✅ Tiempo de expiración de reserva
+- ✅ Notificación de lista de espera
+- ✅ Duración token de acceso
+- ✅ Duración token de refresco
+- ✅ Notificación por email
+
+**Notas**:
+
+- Estas configuraciones únicamente se dejan registradas en el backend para futuras implementaciones. No se implementa ninguna funcionalidad para el modo mantenimiento, envío de notificaciones por email, penalizaciones por cancelación y lista de espera en el frontend.
+
 ### **🎨 Experiencia de Usuario**
 
 - ✅ Diseño responsive

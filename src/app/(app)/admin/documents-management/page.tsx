@@ -58,6 +58,7 @@ type IdentityDocument = { id: number; number: string; active: boolean };
 export default function DocumentsManagement() {
   const [activeTab, setActiveTab] = useState<'users' | 'documents'>('users');
   const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string>('ALL');
   const [docNumber, setDocNumber] = useState('');
   const [docSearchTerm, setDocSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -83,14 +84,19 @@ export default function DocumentsManagement() {
   const totalPages = Math.max(1, documentsData?.totalPages || 1);
 
   const filteredUsers = useMemo(() => {
-    const q = searchTerm.trim().toLowerCase();
-    if (!q) return users;
-    return users.filter((u) =>
-      [u.email, u.documentNumber, u.fullName, u.role]
-        .filter(Boolean)
-        .some((v) => v.toLowerCase().includes(q))
-    );
-  }, [users, searchTerm]);
+    return users.filter((u) => {
+      const q = searchTerm.trim().toLowerCase();
+      const matchesSearch =
+        !q ||
+        [u.email, u.documentNumber, u.fullName, u.role]
+          .filter(Boolean)
+          .some((v) => v.toLowerCase().includes(q));
+
+      const matchesRole = roleFilter === 'ALL' || u.role === roleFilter;
+
+      return matchesSearch && matchesRole;
+    });
+  }, [users, searchTerm, roleFilter]);
 
   const currentUsers = filteredUsers;
 
@@ -192,6 +198,17 @@ export default function DocumentsManagement() {
                 }}
               />
             </div>
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
+              <SelectTrigger className='w-40'>
+                <SelectValue placeholder='Filtrar por rol' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='ALL'>Todos los roles</SelectItem>
+                <SelectItem value='ADMIN'>Administrador</SelectItem>
+                <SelectItem value='PROFESSOR'>Profesor</SelectItem>
+                <SelectItem value='RETIREE'>Jubilado</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <Card>
@@ -229,7 +246,7 @@ export default function DocumentsManagement() {
                             value={u.role}
                             onValueChange={(val) => handleChangeRole(u.id, val)}
                           >
-                            <SelectTrigger className='w-[160px]'>
+                            <SelectTrigger className='w-40'>
                               <SelectValue placeholder='Seleccionar rol' />
                             </SelectTrigger>
                             <SelectContent>

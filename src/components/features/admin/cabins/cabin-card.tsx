@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/card';
 import { formatPrice } from '@/lib/helpers';
 import { type Cabin } from '@/types/cabin';
-import { DollarSign, Edit, MapPin, Trash2, Users } from 'lucide-react';
+import { Clock, DollarSign, Edit, MapPin, Trash2, Users } from 'lucide-react';
 import Image from 'next/image';
 
 type CabinCardProps = {
@@ -64,6 +64,16 @@ export const CabinCard = ({
           <div className='flex items-center font-bold text-cooprudea-teal'>
             <DollarSign className='h-4 w-4 mr-1' />
             {formatPrice(cabin.basePrice)}
+          </div>
+        </div>
+        <div className='flex flex-col text-sm text-muted-foreground gap-2'>
+          <div className='flex items-center'>
+            <Clock className='h-4 w-4 mr-1' />
+            <span>Check-in: {cabin.defaultCheckInTime}</span>
+          </div>
+          <div className='flex items-center'>
+            <Clock className='h-4 w-4 mr-1' />
+            <span>Check-out: {cabin.defaultCheckOutTime}</span>
           </div>
         </div>
         <div className='flex flex-wrap gap-1 mb-3'>

@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/sheet';
 import { ThemeButton } from './theme-button';
 import { ChangePasswordModal } from './change-password-modal';
+import { AdminSettingsModal } from './admin-settings-modal';
 
 export const Navbar = () => {
   const router = useRouter();
@@ -35,7 +36,6 @@ export const Navbar = () => {
   const [isUserAdmin, setIsUserAdmin] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
 
-  // Usar TanStack Query para obtener perfil de usuario
   const { data: user } = useUserProfile();
 
   useEffect(() => {
@@ -207,10 +207,17 @@ export const Navbar = () => {
         </div>
       </div>
 
-      <ChangePasswordModal
-        open={showChangePassword}
-        onOpenChange={setShowChangePassword}
-      />
+      {isUserAdmin ? (
+        <AdminSettingsModal
+          open={showChangePassword}
+          onOpenChange={setShowChangePassword}
+        />
+      ) : (
+        <ChangePasswordModal
+          open={showChangePassword}
+          onOpenChange={setShowChangePassword}
+        />
+      )}
     </header>
   );
 };

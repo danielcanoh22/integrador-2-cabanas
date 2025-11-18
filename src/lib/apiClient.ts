@@ -39,5 +39,15 @@ export async function apiClient(endpoint: string, options: RequestInit = {}) {
     return null;
   }
 
-  return res.json();
+  const contentType = res.headers.get('content-type');
+  if (!contentType || !contentType.includes('application/json')) {
+    return null;
+  }
+
+  const text = await res.text();
+  if (!text || text.trim() === '') {
+    return null;
+  }
+
+  return JSON.parse(text);
 }

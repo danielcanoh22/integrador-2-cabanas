@@ -6,6 +6,7 @@ export interface LoginCredentials {
 export interface LoginResponse {
   accessToken: string;
   refreshToken: string;
+  mustChangePassword?: boolean;
 }
 
 export interface RegisterPayload {

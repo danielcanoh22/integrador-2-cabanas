@@ -11,12 +11,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { login } from '@/services/auth';
 import Link from 'next/link';
+import { ForceChangePasswordModal } from '@/components/shared/force-change-password-modal';
 
 export default function Login() {
   const router = useRouter();
   const [documentNumber, setDocumentNumber] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showForceChangePassword, setShowForceChangePassword] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,8 +30,14 @@ export default function Login() {
       Cookies.set('accessToken', data.accessToken, { expires: 7 });
       Cookies.set('refreshToken', data.refreshToken, { expires: 30 });
 
-      toast.success('¡Bienvenido de vuelta!');
-      router.push('/cabins');
+      if (data.mustChangePassword) {
+        Cookies.set('mustChangePassword', 'true', { expires: 7 });
+        setShowForceChangePassword(true);
+        toast.success('Inicio de sesión exitoso');
+      } else {
+        toast.success('¡Bienvenido de vuelta!');
+        router.push('/cabins');
+      }
     } catch (error) {
       toast.error((error as Error).message || 'Ocurrió un error inesperado.');
     } finally {
@@ -110,6 +118,18 @@ export default function Login() {
           </form>
         </CardContent>
       </Card>
+
+      <ForceChangePasswordModal
+        open={showForceChangePassword}
+        onPasswordChanged={() => {
+          Cookies.remove('mustChangePassword');
+          setShowForceChangePassword(false);
+          toast.success('¡Contraseña actualizada! Redirigiendo...');
+          setTimeout(() => {
+            router.push('/cabins');
+          }, 1000);
+        }}
+      />
     </div>
   );
 }

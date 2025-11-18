@@ -162,15 +162,6 @@ Las siguientes funcionalidades **ya están implementadas en el backend** y solo 
 - Sistema de notificaciones cuando se libere una cabaña
 - Gestión de prioridades en la lista
 
-### **⚙️ Configuración del Sistema**
-
-- Panel de configuración administrativa para:
-  - Cantidad máxima de reservas permitidas por año por usuario
-  - Modo mantenimiento del sistema
-  - Días de penalización por cancelación
-  - Tiempo mínimo de anticipación para reservas
-  - Configuración de precios y descuentos
-
 ### **🚫 Bloqueo de Fechas**
 
 - Establecer bloqueos en fechas específicas
